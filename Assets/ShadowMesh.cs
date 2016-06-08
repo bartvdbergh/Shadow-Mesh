@@ -7,8 +7,11 @@ using System.Collections.Generic;
 public class ShadowMesh : MonoBehaviour
 {
 	public Light source;
-	public GameObject cube;
+	public GameObject obj;
 	public float normalScale;
+	private void Start(){
+		AccolateCollider(obj);
+	}
 
 	private void Update ()
 	{
@@ -17,7 +20,8 @@ public class ShadowMesh : MonoBehaviour
 		List<int>triangles = new List<int> ();
 		List<int>indices;
 
-		ProjectVertcies(source, cube, out vertices, out normals);
+
+		ProjectVertcies(source, obj, out vertices, out normals);
 			//-- Remove duplicates, and a 0,0,0 point --//
 		vertices = TrimList (vertices);
 			//-- Order vertices on y-axis so we can assign indeces in clockwise order --//
@@ -34,8 +38,19 @@ public class ShadowMesh : MonoBehaviour
 			//-- Feed the information back in to  the mesh --//
 		CreateMesh(vertices, triangles);
 		//DrawDebug (vertices,indices,triangles);
-		//DrawOutline (vertices, indices);
+		DrawOutline (vertices, indices);
 
+	}
+
+	private void AccolateCollider (GameObject obj){
+		GameObject colHolder = new GameObject ();
+		colHolder.AddComponent<MeshCollider> ();
+		colHolder.GetComponent<MeshCollider> ().sharedMesh = obj.GetComponent<MeshCollider> ().sharedMesh;
+		colHolder.transform.parent = obj.transform;
+		colHolder.transform.position = obj.transform.position;
+		colHolder.transform.rotation = obj.transform.rotation;
+		colHolder.transform.localScale = Vector3.one * .9999f;
+		Destroy (obj.GetComponent<MeshCollider> ());
 	}
 
 	private void ProjectVertcies (Light source, GameObject obj, out List<Vector3> vertices, out Vector3[] normals)
@@ -52,7 +67,7 @@ public class ShadowMesh : MonoBehaviour
 			RaycastHit[] hits = Physics.RaycastAll (direction);
 
 			if (hits.Length > 0) {
-				if (hits [0].collider.gameObject != obj) {
+				if (hits [0].collider.gameObject.transform != obj.transform.GetChild(0).transform) {
 					Transform transform = hits [0].transform;
 					normals [i] = hits [0].normal;
 					projectedVerticies.Add(hits [0].point);
